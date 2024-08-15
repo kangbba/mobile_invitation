@@ -14,6 +14,7 @@
       color: #555;
       overflow-x: hidden;
       overflow-y: hidden;
+      text-align: center; /* 중앙 정렬을 위한 기본 설정 */
     }
 
     /* 스플래시 화면 스타일 */
@@ -51,10 +52,10 @@
 
     .splash-text {
       font-family: 'Dancing Script', cursive;
-      font-size: 120px; /* 더 큰 글씨 크기 */
-      color: #ffffff; /* 흰색 텍스트 */
+      font-size: 120px;
+      color: #ffffff;
       position: absolute;
-      top: 3%; /* 이미지 상단에서 더 위로 위치 조정 */
+      top: 3%;
       left: 50%;
       transform: translateX(-50%);
       white-space: nowrap;
@@ -100,8 +101,8 @@
     }
 
     p {
-      font-family: 'Nanum Pen Script', cursive; /* 나눔손글씨 적용 */
-      font-size: 27px; /* 1.5배 크기 */
+      font-family: 'Nanum Pen Script', cursive;
+      font-size: 27px;
       line-height: 1.6;
       margin: 0 0 20px;
     }
@@ -136,6 +137,10 @@
       .card, .map-container {
         margin: 20px auto;
         padding: 20px;
+      }
+
+      .splash-text {
+        font-size: 80px; /* 모바일에 맞게 텍스트 크기 조정 */
       }
     }
 
@@ -187,7 +192,7 @@
 <body>
   <!-- 스플래시 화면 -->
   <div id="splash">
-    <img src="images/1.jpeg" alt="스플래시 이미지">
+    <img src="images/1.jpeg?nocache=<?php echo time(); ?>" alt="스플래시 이미지">
     <div class="splash-text">
       We're getting married
     </div>
@@ -196,7 +201,7 @@
   <!-- 본문 카드들 -->
   <div class="card">
     <div class="image-container">
-      <img src="images/2.jpeg" alt="Wedding Venue">
+      <img src="images/2.jpeg?nocache=<?php echo time(); ?>" alt="Wedding Venue">
     </div>
     <h2>강진형 & 김현지의 결혼식에 초대합니다</h2>
     <p><strong>일시:</strong> 2024년 12월 22일 (일요일) 오후 5시 30분</p>
@@ -208,7 +213,7 @@
     서로의 사랑과 따뜻한 축복 속에서 새롭게 시작합니다.<br>
     귀한 걸음 하시어 저희의 새로운 출발을 함께 축복해 주세요.</p>
     <div class="image-container">
-      <img src="images/3.jpeg" alt="Couple Image">
+      <img src="images/3.jpeg?nocache=<?php echo time(); ?>" alt="Couple Image">
     </div>
   </div>
 
@@ -218,7 +223,7 @@
         외로울 때 혼자서 부를 노래 있다는 것​<br>
         <행복>, 나태주<br></p>
     <div class="image-container">
-      <img src="images/4.jpeg" alt="Happy Moment Image">
+      <img src="images/4.jpeg?nocache=<?php echo time(); ?>" alt="Happy Moment Image">
     </div>
   </div>
 
@@ -228,7 +233,7 @@
     결혼식을 통해 저희의 사랑이 더욱 깊어질 수 있도록<br>
     따뜻한 마음으로 축복해 주세요.</p>
     <div class="image-container">
-      <img src="images/5.jpeg" alt="Family Image">
+      <img src="images/5.jpeg?nocache=<?php echo time(); ?>" alt="Family Image">
     </div>
   </div>
 
@@ -257,47 +262,89 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // 스플래시 화면 처리
       const splashImage = document.querySelector("#splash img");
-      splashImage.style.animation = "splashFadeIn 2s ease-in-out forwards"; // 느린 애니메이션
+      splashImage.style.animation = "splashFadeIn 2s ease-in-out forwards";
 
-      setTimeout(function () {
-        document.getElementById('splash').style.animation = "splashFadeOut 2s ease-in-out forwards"; // 느린 애니메이션
-        document.body.style.overflowY = 'auto'; // 스크롤 활성화
-        window.scrollTo(0, 0); // 스크롤을 맨 위로 이동
+      const imagesToPreload = [
+        'images/2.jpeg?nocache=<?php echo time(); ?>',
+        'images/3.jpeg?nocache=<?php echo time(); ?>',
+        'images/4.jpeg?nocache=<?php echo time(); ?>',
+        'images/5.jpeg?nocache=<?php echo time(); ?>'
+      ];
+
+      let imagesLoaded = 0;
+      const totalImages = imagesToPreload.length;
+
+      function checkIfReadyToHideSplash() {
+        const minSplashTime = 3000;  // 최소 3초
+        const maxSplashTime = 10000; // 최대 10초
+
+        const splashStartTime = Date.now();
         
-        // Intersection Observer 설정 (스플래시가 사라진 후 실행)
-        const options = {
-          threshold: 0.1,
-          rootMargin: '0px 0px -100px 0px' // 애니메이션이 더 아래에서 트리거되도록 설정
-        };
+        // 워치독 타이머 설정 (최대 10초)
+        const watchDogTimer = setTimeout(() => {
+          hideSplash();
+        }, maxSplashTime);
 
-        const observer = new IntersectionObserver((entries, observer) => {
-          entries.forEach(entry => {
-            if(entry.isIntersecting){
-              entry.target.classList.add('show');
-              observer.unobserve(entry.target); // 한번 나타나면 관찰 중지
+        // 이미지 로딩 후 스플래시 숨김 처리
+        function hideSplash() {
+          clearTimeout(watchDogTimer); // 워치독 타이머 제거
+
+          const elapsedTime = Date.now() - splashStartTime;
+          const remainingTime = minSplashTime - elapsedTime;
+
+          // 최소 3초가 지났는지 확인
+          if (remainingTime > 0) {
+            setTimeout(hideSplashNow, remainingTime);
+          } else {
+            hideSplashNow();
+          }
+        }
+
+        function hideSplashNow() {
+          document.getElementById('splash').style.animation = "splashFadeOut 2s ease-in-out forwards";
+          document.body.style.overflowY = 'auto'; // 스크롤 활성화
+          window.scrollTo(0, 0); // 스크롤을 맨 위로 이동
+
+          // Intersection Observer 설정
+          const options = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+          };
+
+          const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('show');
+                observer.unobserve(entry.target); // 한번 나타나면 관찰 중지
+              }
+            });
+          }, options);
+
+          const cards = document.querySelectorAll('.card');
+          cards.forEach(card => observer.observe(card));
+
+          const imageContainers = document.querySelectorAll('.image-container');
+          imageContainers.forEach(container => observer.observe(container));
+
+          const mapContainer = document.querySelector('.map-container');
+          observer.observe(mapContainer);
+        }
+
+        // 이미지가 모두 로드되었는지 확인
+        imagesToPreload.forEach(src => {
+          const img = new Image();
+          img.src = src;
+          img.onload = function () {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+              hideSplash();
             }
-          });
-        }, options);
-
-        // 카드들 관찰 시작
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-          observer.observe(card);
+          };
         });
+      }
 
-        // 이미지 컨테이너들 관찰 시작
-        const imageContainers = document.querySelectorAll('.image-container');
-        imageContainers.forEach(container => {
-          observer.observe(container);
-        });
-
-        // 지도 컨테이너 관찰 시작
-        const mapContainer = document.querySelector('.map-container');
-        observer.observe(mapContainer);
-
-      }, 6000); // 스플래시 화면을 6초 유지
+      checkIfReadyToHideSplash();
     });
   </script>
 </body>
